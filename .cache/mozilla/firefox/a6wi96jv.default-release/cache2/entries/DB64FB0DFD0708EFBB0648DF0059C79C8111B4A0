@@ -1,0 +1,291 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>PassNi Admin :::</title>
+
+<link rel="stylesheet" type="text/css" href="/sso/user/css/basic.css"/>
+
+<style type="text/css">
+.fl_box2 .loding_bar { margin:100px 0 15px 0; width:540px; height:205px; background:url(/sso/user/images/load_bg.gif) no-repeat; padding:100px 0 0 0 }
+</style>
+
+<script type="text/javascript">
+
+var syncType = '';
+var appId = 'ednetYonsei'
+
+function getCookies1(Name) {
+  var search = Name + "=";
+    offset = document.cookie.indexOf(search);
+  if (document.cookie.length > 0) { // 쿠키가 설정되어 있다면    
+    if (offset != -1) { // 쿠키가 존재하면
+      offset += search.length;
+      // set index of beginning of value
+      end = document.cookie.indexOf(";", offset);
+      // 쿠키 값의 마지막 위치 인덱스 번호 설정
+      if (end == -1)
+        end = document.cookie.length;
+	  //alert(document.cookie.substring(offset, end));
+     return "done";
+	  //return unescape(document.cookie.substring(offset, end));
+    }
+  }
+}
+
+// 화면 로드
+function fSSOInitialize() {
+	var returnCode = '[PM_UAN]011';
+	var returnMessage = '연세포탈(YONSEI PORTAL SERVICE) 로그인 '+'사용자 접근권한이 성공되었습니다.';
+	var returnCode2 = '';
+	
+	if(returnCode2 == '[PM_UAN]009'){
+		if (getCookies1("pop1") != "done") {   
+			var w = 400;
+			var h = 260;
+			var l = screen.width/2 - w/2 - 200;
+			var t = screen.height/2 - h/2 - 150;
+			var eventCookie = getCookies1("pop1");
+		
+			if (eventCookie != "no"){
+				var url = "user/pm/pmUserPwChangePop.jsp";
+				var option = 'toolbar=no,directories=no,status=no,scrollbars=no,menubar=no,resizable=no';
+				window.open(url,'s','left='+l+',top='+t+',width='+w+',height='+h+','+option);
+				
+		   }
+	    }
+	}
+	/*
+	if( returnCode == '[PM_UAN]033' ) {
+		alert( returnMessage );
+	}
+	*/
+	var appSyncMapCnt = '';
+	var appMySSOMapCnt = '';
+	
+	if( appSyncMapCnt == '0' ) {
+		//var url = '</%=cf_base_root%>/user/pm/pmUserMapPop.jsp?app_id=</%=appid%>';
+		//window.open( url, 'userMapPop', 'left=100,top=100,width=300,height=200,resizable=yes,depend=yes' );
+		
+		document.getElementById( 'lodding' ).style.display = 'none';
+		document.getElementById( 'mapping' ).style.display = '';
+		document.getElementById( 'btn01' ).style.display = '';
+		
+	} else if( appMySSOMapCnt == '0' ) {
+		
+		document.getElementById( 'lodding' ).style.display = 'none';
+		document.getElementById( 'myssomapping' ).style.display = '';
+		
+	} else {
+		document.ssoLoginForm.submit();
+	}
+}
+
+// 아이프래임에서 호출
+function fResponse( returnCode ) {
+	if( returnCode == 'S' ) {
+		document.getElementById( 'continue' ).style.display = '';
+		
+		document.ssoLoginForm.submit();
+		
+	} else {
+		document.getElementById( 'lodding' ).style.display = 'none';
+		document.getElementById( 'mapping' ).style.display = '';
+		document.getElementById( 'continue' ).style.display = 'none';
+		
+		if( syncType == 'L' && returnCode == 'LS0002' ) {
+			alert( '사용자 정보가 존재하지 않습니다.\n\n확인 후 다시 입력하시기 바랍니다.' );	
+		} else {
+			alert( '연동중 오류가 발생하였습니다. [' + returnCode + ']\n\n잠시 후 다시 시도하여 주십시요.\n\n오류가 계속 발생할 경우 관리자에게 문의하여 주시기 바랍니다.' );	
+		}
+	}
+}
+
+// 기존회원
+function fBeforeUser() {
+	document.getElementById( 'btn01' ).style.display = 'none';
+	document.getElementById( 'btn02' ).style.display = '';
+}
+
+// 기존회원 연동
+function fBeforeUserAccount() {
+	var agt_user_id = document.getElementById( 'agt_user_id' ).value;
+	var agt_user_pwd = document.getElementById( 'agt_user_pwd' ).value;
+	
+	if( agt_user_id == '' ) {
+		alert( '아이디를 입력하여 주십시요.' );
+		document.getElementById( 'agt_user_id' ).focus();
+		return;
+	}
+	
+	if( agt_user_pwd == '' ) {
+		alert( '비밀번호를 입력하여 주십시요.' );
+		document.getElementById( 'agt_user_pwd' ).focus();
+		return;
+	}
+	
+	syncType = 'L';
+	
+	document.getElementById( 'i_mapping' ).src = '/sso/user/pm/pmUserAccountIf.jsp?type=L&app_id='+appId+'&agt_user_id='+agt_user_id+'&agt_user_pwd='+agt_user_pwd;
+}
+
+//기존회원 취소
+function fBeforeUserCancel() {
+	document.getElementById( 'btn01' ).style.display = '';
+	document.getElementById( 'btn02' ).style.display = 'none';
+}
+
+// 신규회원 연동
+function fNewUserAccount() {
+	document.getElementById( 'lodding' ).style.display = '';
+	document.getElementById( 'mapping' ).style.display = 'none';
+	document.getElementById( 'continue' ).style.display = 'none';
+	
+	syncType = 'R';
+	
+	document.getElementById( 'i_mapping' ).src = '/sso/user/pm/pmUserAccountIf.jsp?type=R&app_id='+appId;
+}
+
+// 로그인화면 이동
+function fLoginForm() {
+	document.loginForm.submit();
+}
+
+</script>
+
+</head>
+<body onload="fSSOInitialize();">
+	
+	<div id="mapping" style="display: none;">
+	
+		<center>
+			<h2> </h2>
+			<div class="fl_box2">
+				<p class="loding_bar" style="padding-top: 70px;">
+					
+					<strong></strong> 시스템에 대한 연동 정보가 없습니다.<br/><br/>
+					아래 버튼을 클릭하여 회원정보를 연동하시겠습니까?<br/><br/><br/>
+					
+					<span id="btn01" style="display: none;">
+						<a href="javascript:;" onclick="fBeforeUser();">기존회원</a>
+						&nbsp;&nbsp;&nbsp;
+						<a href="javascript:;" onclick="fNewUserAccount();">신규회원</a>
+						&nbsp;&nbsp;&nbsp;
+						<a href="javascript:;" onclick="fLoginForm();">취소</a>
+					</span>
+					
+					<span id="btn02" style="display: none;">
+						아이디 <input type="text" id="agt_user_id" name="agt_user_id" style="width:120px; height:20px;" /> &nbsp;비밀번호 <input type="password" id="agt_user_pwd" name="agt_user_pwd" style="width:120px; height:20px;" />
+						&nbsp;&nbsp;
+						<a href="javascript:;" onclick="fBeforeUserAccount();">정보연동</a>
+						&nbsp;&nbsp;
+						<a href="javascript:;" onclick="fBeforeUserCancel();">취소</a>
+					</span>
+					
+				</p>
+			</div>
+		</center>
+		
+	</div>
+	
+	<iframe src="" id="i_mapping" name="i_mapping" style="width:0; height:0; margin: 0;"></iframe>
+	
+	<div id="myssomapping" style="display: none;">
+	
+		<center>
+			<h2> </h2>
+			<div class="fl_box2">
+				<p class="loding_bar" style="padding-top: 70px;">
+					
+					<strong></strong> 시스템에 대한 연동 정보가 없습니다. <br/><br/>
+					<strong>MYSSO</strong> 설정을 하여 주시기 바랍니다.<br/><br/><br/>
+					
+					<img src="/sso/user/images/btn_continue.gif" onclick="javascript:fLoginForm();" style="cursor:pointer;" alt="계속 진행하기" />
+					
+				</p>
+			</div>
+		</center>
+		
+	</div>
+
+<form id="ssoLoginForm" name="ssoLoginForm" method="post" action="https://www.learnus.org/passni/sso/spLoginData.php">
+	<input type="hidden" id="app_id"   name="app_id"   value="ednetYonsei" />
+	<input type="hidden" id="retUrl"   name="retUrl"   value="https://www.learnus.org" />
+	<input type="hidden" id="failUrl"  name="failUrl"  value="https://www.learnus.org/login/index.php" />
+	<input type="hidden" id="baseUrl"  name="baseUrl"  value="https://www.learnus.org" />
+	<input type="hidden" id="loginUrl" name="loginUrl" value="https://www.learnus.org/passni/sso/coursemosLogin.php" />
+	
+	<input type="hidden" id="E3"       name="E3"       value="06101F4D2E50D545934ECA70420646AD652B8604B3B3F85E98180CC0B6F8EF270FADE07605D9F566267A176471657938F816B86607F7E8501C3D74AA4F8790D146ABE4D915A7CEBBF690A1331BB043429629BB147D192BBF46F341A2342CB3886C5A15AB0CEDE205317419C72F7998C3428A97CFAAEB2F5126E648BA9A8CC21561C50420415910692AD511BB63C6ABFBDC6C85C2BDD1685E27F314E4B8BAAF3B01B0066F88786BD1CC9C3C899649A66B324E2494FFF4105DC3455BD488CD392D9752385211BDBE860080877DB2AADBDB134D0CC9259325896D1CD3C9BA7A838E736CDEBAED7D79F267FFCE6154C1ECBD1A1EC1283AD0616BD90F9D33177F693C" />
+	<input type="hidden" id="E4"       name="E4"       value="98109A62994D16B36D713317175EA21A500F6DE2257C5CF2DBF4349979B520EC6F10CAB6070945CB5747E27EF4F7104AE1A480E4AAAC0D57F62B53FBF6B59E23A6D268745A2F53831CA3E23C702C6F6CAAA422857CC1359013C89C49454ADD2C8F945DF601AC5B48D3C7F2E3E8EFA0DDBD780AF4C786952FCDFF6FC137C9AE3A" />
+	<input type="hidden" id="S2"       name="S2"       value="1C69CEA25CF9D9A4F7AAAA2DF35055C4C6A1E3D1FA5AA3EBB2B9A1A1B6B47437A833256DFD45D37C7E82A000E01B23E72A50A6A5F55652E49498E989654DC61F61D66B2E999EA4D4F304F047D21F635A3087D01A68CB53976AFE36EF3E53C8E3F7E158AE304029464183B83B0DD522DA7B0EB28DFF64A0FDAFCFFA9EB8B755BB893B4B4AF170D5B2A08A43981B16E6421F4AF236EC4E8D5629E578038672036CC3E9144F89F9A8177FE8FECBFCD7F0A7F11889F7CD45EFE4E11E1D2DDFA5CD49F08D23777F2FF21BED6E767F53E022CFACC816F7BFDC6E3FF887F123728F5B13B9F451BB38767F58BDE0E34E14936B372190E29FD440D19B16A8244365946CD4" />
+	
+	<input type="hidden" id="CLTID"    name="CLTID"    value="0188DF5E4E7F576022F5C6239A1E" />
+	
+	
+					<input type="hidden" id="ssoGubun" name="ssoGubun" value="Login" />
+	
+					<input type="hidden" id="refererUrl" name="refererUrl" value="https://www.learnus.org/passni/spLoginProcess.php?isfrompt=Y" />
+	
+					<input type="hidden" id="test" name="test" value="SSOAuthLogin" />
+	
+					<input type="hidden" id="username" name="username" value="2018147566" />
+	
+					<input type="hidden" id="password" name="password" value="980701" />
+	
+</form>
+
+<form id="loginForm" name="loginForm" method="post" action="/sso/PmSSOService">
+	<input type="hidden" id="appid"    name="appid"    value="ednetYonsei" />
+	<input type="hidden" id="retUrl"   name="retUrl"   value="https://www.learnus.org" />
+	<input type="hidden" id="failUrl"  name="failUrl"  value="https://www.learnus.org/login/index.php" />
+	<input type="hidden" id="baseUrl"  name="baseUrl"  value="https://www.learnus.org" />
+	<input type="hidden" id="loginUrl" name="loginUrl" value="https://www.learnus.org/passni/sso/coursemosLogin.php" />
+	
+	
+					<input type="hidden" id="ssoGubun" name="ssoGubun" value="Login" />
+	
+					<input type="hidden" id="refererUrl" name="refererUrl" value="https://www.learnus.org/passni/spLoginProcess.php?isfrompt=Y" />
+	
+					<input type="hidden" id="test" name="test" value="SSOAuthLogin" />
+	
+					<input type="hidden" id="username" name="username" value="2018147566" />
+	
+					<input type="hidden" id="password" name="password" value="980701" />
+	
+</form>
+
+</body>
+</html>
+_�O���      aft4aft4C�?aft4   f    O^partitionKey=%28https%2Cyonsei.ac.kr%29,~1634104379,:https://infra.yonsei.ac.kr/sso/PmSSOAuthService necko:classified 1 strongly-framed 1 security-info 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 request-method POST response-head HTTP/1.1 200 OK
+Date: Wed, 13 Oct 2021 05:52:49 GMT
+Content-Type: text/html; charset=UTF-8
+ original-response-headers Date: Wed, 13 Oct 2021 05:52:49 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: Keep-Alive
+Set-Cookie: passni.keepLogin=null;Path=/;HttpOnly
+Transfer-Encoding: chunked
+ ctid 1 uncompressed-len 0 net-response-time-onstart 127 net-response-time-onstop 146   )�

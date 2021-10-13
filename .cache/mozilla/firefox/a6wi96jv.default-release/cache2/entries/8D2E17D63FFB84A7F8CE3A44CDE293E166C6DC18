@@ -1,0 +1,398 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<title>연세대학교 로그인</title>
+
+
+<link rel="shortcut icon" type="image/x-icon" href="/sso/user/pm/img/icon.ico">
+<link rel="stylesheet" type="text/css" href="/sso/user/pm/css/style.css">
+
+
+<!-- script 태그에서 가져오는 자바스크립트 파일의 순서에 주의해야한다! 순서가 틀릴경우 자바스크립트 오류가 발생한다. -->
+<script type="text/javascript" src="/sso/js/rsa/jsbn.js"></script>
+<script type="text/javascript" src="/sso/js/rsa/rsa.js"></script>
+<script type="text/javascript" src="/sso/js/rsa/prng4.js"></script>
+<script type="text/javascript" src="/sso/js/rsa/rng.js"></script>
+
+<script src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
+
+<script type="text/javascript" src="/sso/js/common/prototype.js"></script>
+<script type="text/javascript" src="/sso/js/common/eventKeyBlock.js"></script>
+<script type="text/javascript" src="/sso/js/common/cookieUtil.js"></script>
+<script type="text/javascript" src="/sso/js/enc/sha256.js"></script>
+
+<script type="text/javascript">
+
+
+/**
+ * Body Onload 시 호출
+ */
+function fInitialize() {
+	
+	var login_url = 'https://www.learnus.org/passni/sso/coursemosLogin.php';
+	var returnMessage = '';
+	var base_root = '/sso';
+	
+	var test = 'SSOAuthLogin';
+	var retCode = '';
+	if( login_url != '' ) {
+		if( test  != 'SSOLogin' ){
+			document.ssoLoginForm.submit();
+		}else{
+			if( returnMessage != '' ) {
+				if( retCode == '[PM_UAN]038' ) {
+					var w = 550;
+					var h = 450;
+					var l = screen.width/2 - w/2 - 200;
+					var t = screen.height/2 - h/2 - 150;
+					
+					alert( returnMessage );
+					var url = "user/pm/pmUserPwModify.jsp" + "?app_id=" +'ednetYonsei';
+					var option = 'toolbar=no,directories=no,status=no,scrollbars=no,menubar=no,resizable=no';
+					//window.open(url,'s','left='+l+',top='+t+',width='+w+',height='+h+','+option);
+					location.href = url;
+				}
+				$('info').innerHTML = '<p class="error1" style="display:block;">' + returnMessage + '</p>';
+			}
+			$('loginId').focus();
+		}		
+	} else {
+		
+		if( returnMessage != '' ) {
+			if( retCode == '[PM_UAN]038' ) {
+				var w = 550;
+				var h = 450;
+				var l = screen.width/2 - w/2 - 200;
+				var t = screen.height/2 - h/2 - 150;
+				
+				alert( returnMessage );
+				var url = "user/pm/pmUserPwModify.jsp" + "?app_id=" +'ednetYonsei';
+				var option = 'toolbar=no,directories=no,status=no,scrollbars=no,menubar=no,resizable=no';
+				//window.open(url,'s','left='+l+',top='+t+',width='+w+',height='+h+','+option);
+				location.href = url;
+			}
+			$('info').innerHTML = '<p class="error1" style="display:block;">' + returnMessage + '</p>';
+		}
+		$('loginId').focus();
+	}
+}
+
+
+function NaverLoginex() {
+	var loginId     = $('loginId').value;
+	
+	if( $('loginId').value == '' ){
+		alert( '아이디를 입력하여 주십시요.' );
+		$('loginId').focus();
+		return false;
+	}
+	
+	var btnNaverLogin = $('naverIdLogin').firstChild;
+	btnNaverLogin.click();
+};
+
+function idPwLogin(){
+	$('naverdisplay').hide();
+	$('loginPasswd').show();
+	$('loginBtn').show();
+	$('loginId').value = '';
+	$('loginPasswd').value = '';
+	$('tap_check').value = 'id';
+	document.getElementById('idPwLogin').style.fontWeight='bold';
+	document.getElementById('certLogin').style.fontWeight='normal';
+	
+};
+
+function certLogin(){
+	$('naverdisplay').show();
+	$('loginPasswd').hide();
+	$('loginBtn').hide();
+	$('loginId').value = '';
+	$('loginPasswd').value = '';
+	$('tap_check').value = 'cert';
+	document.getElementById('idPwLogin').style.fontWeight='normal';
+	document.getElementById('certLogin').style.fontWeight='bold';
+};
+
+/**
+ * ID/PW 로그인 버튼
+ */
+function fSubmitSSOLoginForm(){
+	var loginId     = $('loginId').value;
+	var loginPasswd = $('loginPasswd').value;
+	
+	if( $('loginId').value == '' ){
+		alert( '아이디를 입력하여 주십시요.' );
+		$('loginId').focus();
+		return false;
+	}
+	
+	if( $('loginPasswd').value == '' ){
+		alert( '비밀번호를 입력하여 주십시요.' );
+		$('loginPasswd').focus();
+		return false;
+	}
+	
+	$('loginId').value = '';
+	$('loginPasswd').value = '';
+	
+	var ssoChallenge= 'A956F5BD21DF590EB9900396F7FCCD6D7473F656';
+	
+	var jsonObj = {'userid':loginId, 'userpw':loginPasswd, 'ssoChallenge':ssoChallenge};
+	var jsonStr = Object.toJSON( jsonObj );
+	
+	//document.ssoLoginForm.E2.value = rstr2hex( jsonStr );
+	
+	var rsa = new RSAKey();
+	rsa.setPublic( '85bddf00df7d93139f2534b84c85008f6ea72a47ffd59ef4f56de69f025f5f81aba57949e94c6b1a03ca7156d03bb737a7c16fcdbaf04a82ffd9ad397e5f7e4b9a152cf2664a7263ee61f6f46675851b01dc83268270becab3a949e4d24d4a89e56f7c62f4c175b5f588cfaa155dabcf4950d35fa3091c1e487d31a2110d308b', '10001' );
+	
+	document.ssoLoginForm.E2.value = rsa.encrypt( jsonStr );
+
+	/*
+	var expDate  = new Date();
+	expDate.setDate(expDate.getDate()+1);
+	
+	if (document.ssoLoginForm.idSave.checked == true) {
+		jsSetCookie('cookieLoginId', loginId, expDate, '/');
+	}else{
+		jsSetCookie('cookieLoginId', '', expDate, '/');
+	}
+	*/
+	
+	//return true;
+	
+	document.ssoLoginForm.submit();
+}
+
+/**
+ * 네이버 인증서 로그인
+ */
+function fSubmitSSONaverCertLoginForm(jsonData){
+	
+	var loginId     = $('loginId').value;
+	
+	if( $('loginId').value == '' ){
+		alert( '아이디를 입력하여 주십시요.' );
+		$('loginId').focus();
+		return false;
+	}
+	
+	$('loginId').value = '';
+	$('loginPasswd').value = '';
+	
+	var ssoChallenge= 'A956F5BD21DF590EB9900396F7FCCD6D7473F656';
+	
+	// E2 : ssoChallenge, user_id
+	// E3 : birthday, gender, mobile
+	// E4 : name
+	
+	//var jsonObj = {'jsonData':jsonData, 'ssoChallenge':ssoChallenge};
+	var R_jsonObj = JSON.parse(jsonData);
+	var birthday = R_jsonObj.birthday;
+	var gender = R_jsonObj.gender;
+	var mobile = R_jsonObj.mobile;
+	var name = R_jsonObj.name;
+	var jsonObj = {'userid':loginId, 'ssoChallenge':ssoChallenge} ;
+	var jsonStr = Object.toJSON( jsonObj );
+	
+	var E3_jsonObj = {'birthday' : birthday,'mobile':mobile, 'gender': gender} ;
+	var E3_jsonStr = Object.toJSON( E3_jsonObj );
+	var E4_jsonObj = {'name':name} ;
+	var E4_jsonStr = Object.toJSON( E4_jsonObj );
+	
+	var rsa = new RSAKey();
+	rsa.setPublic( '85bddf00df7d93139f2534b84c85008f6ea72a47ffd59ef4f56de69f025f5f81aba57949e94c6b1a03ca7156d03bb737a7c16fcdbaf04a82ffd9ad397e5f7e4b9a152cf2664a7263ee61f6f46675851b01dc83268270becab3a949e4d24d4a89e56f7c62f4c175b5f588cfaa155dabcf4950d35fa3091c1e487d31a2110d308b', '10001' );
+	
+	document.ssoLoginForm.E2.value = rsa.encrypt( jsonStr );
+	document.ssoLoginForm.E3.value = rsa.encrypt( E3_jsonStr );
+	document.ssoLoginForm.E4.value = rsa.encrypt( E4_jsonStr );
+	
+	document.ssoLoginForm.loginType.value = "invokeCert";
+
+	
+	document.ssoLoginForm.submit();
+}
+
+
+	
+function fnd(){
+	window.open('http://ysweb.yonsei.ac.kr/fndhakbun.jsp?langParam=0', 'FNDHAKBUN','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,titlebar=no, width=900,height=700');
+}
+
+function login_cancle(){
+	location.href="http://portal.yonsei.ac.kr";
+	//location.href="https://www.learnus.org/login/index.php";
+	
+}
+
+function spop(){
+	var url = "http://ysweb.yonsei.ac.kr/fndhakbun.jsp"; 
+	var win = window.open(url, "ttt","toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,titlebar=no, width=600,height=400"); 
+	if(win.focus) win.focus();
+}
+
+function dohelp(){
+	popupWin = window.open("http://underwood1.yonsei.ac.kr/haksa/HELP/dugrock-01.htm","Property_Sheet","statusbar=Y,resizable=N,scrollbars=N,width=700,height=630"); 
+	popupWin.focus();
+}
+
+function dohelp2(){
+	popupWin = window.open("http://cmsdv.yonsei.ac.kr/yis/sub05/sub0506/sub05_06.asp","_blank",""); 
+	popupWin.focus();
+}
+
+
+function checkCertNew_id(){
+	//alert('점검중입니다. 최대한 빨리 서비스를 재개토록 하겠습니다. 문의전화 : 02-2123-6395');
+	//return;
+	
+	win =window.open('https://infra.yonsei.ac.kr/lauth/yscert/yscert_1.jsp',"yscertpopup","width=450,height=550,top=50,left=50,menubar=no,resizable=no,status=no,toolbar=no,location=no,scrollbars=yes,directories=no");   
+	win.focus();
+}	
+
+function checkCertNew_pwd(){
+	//alert('점검중입니다. 최대한 빨리 서비스를 재개토록 하겠습니다. 문의전화 : 02-2123-6395');
+	//return;
+	
+	win =window.open('https://infra.yonsei.ac.kr/lauth/yscert/yscert_p_1.jsp',"yscertpopup","width=450,height=550,top=50,left=50,menubar=no,resizable=no,status=no,toolbar=no,location=no,scrollbars=yes,directories=no");   
+	win.focus();
+}
+
+document.addEventListener('keydown', function(event) {
+	if (event.keyCode === 13) {
+		event.preventDefault();
+
+		var tap_check     = $('tap_check').value;
+		if( tap_check == 'id'){
+			fSubmitSSOLoginForm();
+		}else{
+			NaverLoginex();
+		}
+	};
+}, true);
+
+
+</script>
+	
+    
+</head>
+<body onload="fInitialize();" id="login" bgcolor="#FFFFFF" >
+
+	<input type="hidden" id="tap_check" name="tap_check" value="id"/>
+
+
+<form id="ssoLoginForm" name="ssoLoginForm" method="post" action="https://www.learnus.org/passni/sso/coursemosLogin.php">
+	<input type="hidden" id="app_id"       name="app_id"        value="ednetYonsei" />
+	<input type="hidden" id="retUrl"       name="retUrl"        value="https://www.learnus.org" />
+	<input type="hidden" id="failUrl"      name="failUrl"       value="https://www.learnus.org/login/index.php" />
+	<input type="hidden" id="baseUrl"      name="baseUrl"       value="https://www.learnus.org" />
+	<input type="hidden" id="loginUrl"     name="loginUrl"      value="https://www.learnus.org/passni/sso/coursemosLogin.php" />
+	<input type="hidden" id="ssoChallenge" name="ssoChallenge"  value="A956F5BD21DF590EB9900396F7FCCD6D7473F656" />
+	<input type="hidden" id="loginType"    name="loginType"     value="invokeID" />
+	
+	<input type="hidden" id="returnCode"    name="returnCode"     value="" />
+	<input type="hidden" id="returnMessage" name="returnMessage"  value="" />
+	
+	<input type="hidden" id="keyModulus"    name="keyModulus"     value="85bddf00df7d93139f2534b84c85008f6ea72a47ffd59ef4f56de69f025f5f81aba57949e94c6b1a03ca7156d03bb737a7c16fcdbaf04a82ffd9ad397e5f7e4b9a152cf2664a7263ee61f6f46675851b01dc83268270becab3a949e4d24d4a89e56f7c62f4c175b5f588cfaa155dabcf4950d35fa3091c1e487d31a2110d308b" />
+	<input type="hidden" id="keyExponent"   name="keyExponent"    value="10001" />
+	
+	
+					<input type="hidden" id="ssoGubun" name="ssoGubun" value="Login" />
+	
+					<input type="hidden" id="refererUrl" name="refererUrl" value="https://www.learnus.org/passni/spLoginProcess.php?isfrompt=Y" />
+	
+					<input type="hidden" id="test" name="test" value="SSOAuthLogin" />
+	
+					<input type="hidden" id="username" name="username" value="2018147566" />
+	
+					<input type="hidden" id="password" name="password" value="980701" />
+	
+	
+	
+</form>
+
+
+
+<!-- (2) LoginWithNaverId Javscript SDK -->
+<script src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.1.js"></script>
+<!-- (3) LoginWithNaverId Javscript 설정 정보 및 초기화 -->
+	<script>
+	window.name='opener';
+	var naverLogin = new naver.LoginWithNaverId(
+		{
+			clientId: "4JwXlRmFN3fGWDQdKLn9",
+			callbackUrl: document.location.protocol + "//" + document.location.host + "/sso/callback.jsp",
+			isPopup: true,
+			loginButton: {color: "green", type: 3, height: 60}
+		}
+	);
+	/* (4) 네아로 로그인 정보를 초기화하기 위하여 init을 호출 */
+	naverLogin.init();
+	
+	/* (5) 현재 로그인 상태를 확인 */
+	function callBackFunction(event) {
+		console.log(event.data);
+		console.log(event);
+		if(event.origin == 'https://infra.yonsei.ac.kr'){
+		
+	    	naverLogin.getLoginStatus(function (status) {
+	    		if (event.data != "") {
+	    		     
+	    			fSubmitSSONaverCertLoginForm(event.data);
+	    		}
+	    	});
+		}
+	};
+	
+	if( window.attachEvent ) {
+		window.attachEvent("onmessage", callBackFunction );
+	} else if( window.addEventListener ){
+		window.addEventListener( "message" , callBackFunction );
+	}
+	
+</script>
+
+</body>
+
+</html>
+
+�G�.      aft3aft3C�?aft3   b    O^partitionKey=%28https%2Cyonsei.ac.kr%29,~1634104376,:https://infra.yonsei.ac.kr/sso/PmSSOService necko:classified 1 strongly-framed 1 security-info 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 request-method POST response-head HTTP/1.1 200 OK
+Date: Wed, 13 Oct 2021 05:52:48 GMT
+Content-Type: text/html; charset=UTF-8
+ original-response-headers Date: Wed, 13 Oct 2021 05:52:48 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: Keep-Alive
+Transfer-Encoding: chunked
+ ctid 1 uncompressed-len 0 net-response-time-onstart 39 net-response-time-onstop 42   0l
